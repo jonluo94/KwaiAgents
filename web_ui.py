@@ -1,4 +1,5 @@
 import json
+import re
 from typing import List, Dict
 
 import gradio as gr
@@ -13,13 +14,23 @@ def build_history_list(history: []) -> List[Dict]:
         question = hist[0] if hist[0] is not None else ""
         answer = hist[1] if hist[1] is not None else ""
         if len(question) > 0 and len(answer) > 0:
-            chat_history.append({"query": question,"answer": answer})
+            chat_history.append({"query": question, "answer": answer})
     return chat_history
 
 
 def get_pre_answer(query, history):
     yield history + [[query, None]], ""
 
+def have_image_to_md(text):
+    pattern = r"(http[s]?:\/\/[^\s]+(?:jpe?g|png|gif))"
+    # Find all matches in the text
+    matches = re.findall(pattern, text)
+    # Print the matched image links
+    for match in matches:
+        md_image_url = f"![image]({match})"
+        text = text.replace(match,md_image_url)
+        print(text)
+    return text
 
 def get_base_answer(query, history):
     if query == "" and history[-1][1] is None:
@@ -43,8 +54,14 @@ def get_base_answer(query, history):
     CFG.use_local_llm = args["use_local_llm"]
     agent_service = AgentService()
     result = agent_service.chat(args)
-    history += [[query, result["response"]]]
-    yield history, ""
+
+    chain_msg = result["chain_msg_str"] + have_image_to_md(result["response"])
+    msg = ""
+    history += [[query, ""]]
+    for char in chain_msg:
+        msg += char
+        history[-1][1] = msg
+        yield history, ""
 
 
 block_css = """.importantButton {

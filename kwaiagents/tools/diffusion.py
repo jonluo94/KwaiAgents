@@ -38,7 +38,7 @@ class DiffusionResult(BaseResult):
             if "error" in res:
                 return f'请求图片生成服务报错'
             rst = item["image"]
-            return rst
+            return f"image: {rst}"
 
 
 class DiffusionTool(BaseTool):
