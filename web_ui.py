@@ -29,7 +29,7 @@ def have_image_to_md(text):
     for match in matches:
         md_image_url = f"![image]({match})"
         text = text.replace(match,md_image_url)
-        print(text)
+
     return text
 
 def get_base_answer(query, history):
