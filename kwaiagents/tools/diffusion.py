@@ -3,6 +3,7 @@
 # Author: luo
 import json
 import os
+import re
 
 from translate import Translator
 
@@ -12,10 +13,19 @@ from kwaiagents.tools.base import BaseResult, BaseTool
 DIFFUSION_SERVER_URL = os.getenv("DIFFUSION_SERVER_URL") if os.getenv(
     "DIFFUSION_SERVER_URL") else "http://127.0.0.1:8080"
 
+
+def has_chinese_chars(data) -> bool:
+    text = f'{data}'
+    return len(re.findall(r'[\u4e00-\u9fff]+', text)) > 0
+
+
 def translate_en_text(text):
-    translator = Translator(from_lang="zh",to_lang="en")
-    translation = translator.translate(text)
+    translation = text
+    if has_chinese_chars(translation):
+        translator = Translator(from_lang="zh", to_lang="en")
+        translation = translator.translate(translation)
     return translation
+
 
 class DiffusionResult(BaseResult):
     @property
@@ -33,7 +43,7 @@ class DiffusionResult(BaseResult):
 
 class DiffusionTool(BaseTool):
     """
-    generate image by entering the  prompt in English, and return the URL of the image.
+    Generate image by the prompt in English, and return the URL of the image.
 
     Args:
         prompt (str): Keywords must be in English or translated into English that describe what you want the image to have.
