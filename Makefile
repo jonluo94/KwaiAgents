@@ -2,7 +2,6 @@ all: pip-install
 
 pip-install:
 	pip install -r requirements.txt
-	pip install -r benchmark/requirements.txt
 
 start-fschat-kagentlms_qwen_7b_mat:
 	pip install vllm

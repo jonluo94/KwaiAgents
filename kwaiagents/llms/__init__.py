@@ -1,4 +1,6 @@
 from __future__ import annotations
+
+import json
 import time
 import traceback
 
@@ -7,14 +9,14 @@ from kwaiagents.llms.clients import OpenAIClient, FastChatClient
 
 
 def create_chat_completion(
-    query: str,
-    history: list[tuple[str, str]] = list(),
-    system: str = "",
-    llm_model_name: str = "gpt-3.5-turbo",
-    temperature: float = CFG.temperature,
-    max_tokens: int = None,
-    stop: str = "",
-    chat_id: str = None
+        query: str,
+        history: list[tuple[str, str]] = list(),
+        system: str = "",
+        llm_model_name: str = "gpt-3.5-turbo",
+        temperature: float = CFG.temperature,
+        max_tokens: int = None,
+        stop: str = "",
+        chat_id: str = None
 ) -> tuple[str, list[tuple[str, str]]]:
     if CFG.use_local_llm:
         llm_bot = FastChatClient(llm_model_name.lower(), host=CFG.local_llm_host, port=CFG.local_llm_port)
@@ -42,5 +44,12 @@ def create_chat_completion(
         time.sleep(backoff)
     if not response:
         raise RuntimeError(f"Failed to get response after {num_retries} retries")
-
+    # 追加日志
+    print_chat_jsonl(query, response)
     return response, new_history
+
+
+def print_chat_jsonl(instruction, output: str):
+    rjson = {"instruction": instruction, "output": output}
+    with open("chat.jsonl", "a",encoding='utf-8') as file:
+        print(json.dumps(rjson,ensure_ascii=False), file=file)

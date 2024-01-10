@@ -1,4 +1,6 @@
-"""Commands to execute code"""
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# Author: luo
 from kwaiagents.tools import CodeInterpreterTool
 from kwaiagents.tools.base import BaseResult
 

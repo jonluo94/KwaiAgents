@@ -26,7 +26,7 @@ planning_prompt_template = """
 
 GOAL:{goal}
 
-\n根据目标和已有任务，规划一个新Task(不能重复)，你只能以以下json列表的格式生成Task
+根据目标和已有任务，规划一个新Task(不能重复)，你只能以以下json列表的格式生成Task
 {{
     "task_name": "任务描述",
     "command":{{
@@ -66,7 +66,7 @@ Please utilize LLM's advantages and pursue efficient strategies for task plannin
 
 GOAL:{goal}
 
-\nBased on the goal and existing tasks, plan a new Task (no repetitions), and you can only generate the Task in the following json list format:
+Based on the goal and existing tasks, plan a new Task (no repetitions), and you can only generate the Task in the following json list format:
 {{
     "task_name": "task description",
     "command":{{
@@ -93,7 +93,8 @@ conclusion_prompt_template = """
 
 {memory}
 
-问题或目标：{goal}\n生成对用户有帮助的中文回答:
+问题或目标：{goal}
+生成对用户有帮助的中文回答:
 """
 
 conclusion_prompt_template_en = """

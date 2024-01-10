@@ -12,5 +12,6 @@ build/*
 
 *.log
 *.out
+*.jsonl
 
 diffusion/images
