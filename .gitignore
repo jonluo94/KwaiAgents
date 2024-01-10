@@ -1,0 +1,16 @@
+env
+*.pyc
+__pycache__
+
+.idea
+.vscode
+.DS_Store
+
+venv
+log/*
+build/*
+
+*.log
+*.out
+
+diffusion/**/.*.png

@@ -18,14 +18,14 @@ from kwaiagents.tools.base import BaseResult, BaseTool
 from kwaiagents.utils.date_utils import get_date_list, fix_date_to_format
 
 
-KEY = os.getenv("WEATHER_API_KEY")
+KEY = os.getenv("WEATHER_API_KEY") if os.getenv("WEATHER_API_KEY") else "b9f690b4de0f4d09baa31944240901"
 URL_CURRENT_WEATHER = "http://api.weatherapi.com/v1/current.json"
 URL_FORECAST_WEATHER = "http://api.weatherapi.com/v1/forecast.json"
 URL_HISTORY_WEATHER = "http://api.weatherapi.com/v1/history.json"
 
 
 def translate_text(text):
-    translator = Translator(to_lang="Chinese")
+    translator = Translator(to_lang="zh")
     translation = translator.translate(text)
     return translation
 
