@@ -13,4 +13,4 @@ build/*
 *.log
 *.out
 
-diffusion/**/.*.png
+diffusion/images
