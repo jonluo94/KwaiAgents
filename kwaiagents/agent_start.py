@@ -5,7 +5,7 @@ import os
 import sys
 import time
 import traceback
-from kwaiagents.config import Config, CFG
+from kwaiagents.config import Config
 from kwaiagents.agents import KAgentSysLite, AgentProfile
 
 
@@ -25,6 +25,10 @@ class AgentService(object):
         cfg.max_tokens_num = input_dict.get("max_tokens_num", 4096)
         if llm_name == "gpt-4":
             cfg.fast_llm_model = "gpt-3.5-turbo"
+
+        cfg.use_local_llm = input_dict.get("use_local_llm", False)
+        cfg.local_llm_host = input_dict.get("local_llm_host", "localhost")
+        cfg.local_llm_port = input_dict.get("local_llm_port", 8888)
 
         return cfg
 
@@ -110,10 +114,6 @@ def main():
     parser.add_argument("--max_tokens_num", type=int, default=4096, help="Maximum length of model input")
 
     args = parser.parse_args()
-
-    CFG.local_llm_host = args.local_llm_host
-    CFG.local_llm_port = args.local_llm_port
-    CFG.use_local_llm = args.use_local_llm
 
     agent_service = AgentService()
 

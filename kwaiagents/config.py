@@ -31,5 +31,3 @@ class Config(object):
 
     def set_chain_logger(self, chain_logger):
         self.chain_logger = chain_logger
-
-CFG = Config()

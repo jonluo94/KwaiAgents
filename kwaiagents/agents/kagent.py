@@ -43,7 +43,7 @@ class SingleTaskListStorage:
 
     def get_task_names(self):
         return [t["task_name"] for t in self.tasks]
-    
+
     def get_tasks(self):
         return list(self.tasks)
 
@@ -72,7 +72,7 @@ class KAgentSysLite(object):
 
     def initialize_memory(self):
         pass
-    
+
     def initialize_tokenizer(self, llm_name):
         if "baichuan" in llm_name:
             model_name = "kwaikeg/kagentlms_baichuan2_13b_mat"
@@ -102,14 +102,14 @@ class KAgentSysLite(object):
                     if tool.zh_name in self.agent_profile.tools or tool.name in self.agent_profile.tools:
                         used_tools.append(tool)
             used_tools += [tool_cls(cfg=self.cfg) for tool_cls in ALL_NO_TOOLS]
-            
+
         self.tools = used_tools
         self.name2tools = {t.name: t for t in self.tools}
 
-    def memory_retrival(self, 
-        goal: str, 
-        conversation_history: List[List], 
-        complete_task_list: List[Dict]):
+    def memory_retrival(self,
+                        goal: str,
+                        conversation_history: List[List],
+                        complete_task_list: List[Dict]):
 
         memory = ""
         if conversation_history:
@@ -123,16 +123,17 @@ class KAgentSysLite(object):
         return memory
 
     def task_plan(self, goal, memory):
-        prompt = make_planning_prompt(self.agent_profile, goal, self.tools, memory, self.cfg.max_tokens_num, self.tokenizer, lang=self.lang)
+        prompt = make_planning_prompt(self.agent_profile, goal, self.tools, memory, self.cfg.max_tokens_num,
+                                      self.tokenizer, lang=self.lang)
         # print(f'\n************** TASK PLAN AGENT PROMPT *************')
         # print(prompt)
         try:
             response, _ = create_chat_completion(
-            query=prompt, llm_model_name=self.cfg.smart_llm_model)
+                query=prompt, llm_model_name=self.cfg.smart_llm_model, config=self.cfg)
             self.chain_logger.put_prompt_response(
-                prompt=prompt, 
-                response=response, 
-                session_id=self.session_id, 
+                prompt=prompt,
+                response=response,
+                session_id=self.session_id,
                 mtype="auto_task_create",
                 llm_name=self.cfg.smart_llm_model)
             response = correct_json(find_json_dict(response))
@@ -143,7 +144,7 @@ class KAgentSysLite(object):
             print("+" + response)
             self.chain_logger.put("fail", logging_think_fail_msg(self.lang))
             new_tasks = list()
-        
+
         return new_tasks
 
     def tool_use(self, command) -> str:
@@ -179,31 +180,33 @@ class KAgentSysLite(object):
             self.chain_logger.put("observation", logging_execute_fail_msg(self.lang))
             return ""
 
-    def conclusion(self, 
-        goal: str, 
-        memory,
-        conversation_history: List[List],
-        no_task_planned: bool = False
-        ):
+    def conclusion(self,
+                   goal: str,
+                   memory,
+                   conversation_history: List[List],
+                   no_task_planned: bool = False
+                   ):
 
         if no_task_planned:
             prompt = make_no_task_conclusion_prompt(goal, conversation_history)
         else:
-            prompt = make_task_conclusion_prompt(self.agent_profile, goal, memory, self.cfg.max_tokens_num, self.tokenizer, lang=self.lang)
+            prompt = make_task_conclusion_prompt(self.agent_profile, goal, memory, self.cfg.max_tokens_num,
+                                                 self.tokenizer, lang=self.lang)
         # print(f'\n************** CONCLUSION AGENT PROMPT *************')
         # print(prompt)
 
         response, _ = create_chat_completion(
-            query=prompt, 
-            chat_id="kwaiagents_answer_" + self.session_id, 
-            llm_model_name=self.cfg.smart_llm_model)
+            query=prompt,
+            chat_id="kwaiagents_answer_" + self.session_id,
+            llm_model_name=self.cfg.smart_llm_model,
+            config=self.cfg)
 
         # print(response)
 
         self.chain_logger.put_prompt_response(
-            prompt=prompt, 
-            response=response, 
-            session_id=self.session_id, 
+            prompt=prompt,
+            response=response,
+            session_id=self.session_id,
             mtype="auto_conclusion",
             llm_name=self.cfg.smart_llm_model)
         return response
@@ -211,7 +214,7 @@ class KAgentSysLite(object):
     def check_task_complete(self, task, iter_id):
         command_name = task["command"]["name"]
         if not task or ("task_name" not in task) or ("command" not in task) \
-            or ("args" not in task["command"]) or ("name" not in task["command"]):
+                or ("args" not in task["command"]) or ("name" not in task["command"]):
             self.chain_logger.put("finish", str(task.get("task_name", "")))
             return True
         elif command_name == FinishTool.name:
@@ -249,8 +252,8 @@ class KAgentSysLite(object):
                     start = False
                     if not tasks_storage.is_empty():
                         task = tasks_storage.popleft()
-                        
-                        if (self.check_task_complete(task, iter_id,)):
+
+                        if (self.check_task_complete(task, iter_id, )):
                             if iter_id <= 2:
                                 no_task_planned = True
                             break
@@ -280,7 +283,7 @@ class KAgentSysLite(object):
         self.chain_logger.put("conclusion", "")
 
         conclusion = self.conclusion(
-            goal, 
+            goal,
             memory=memory,
             conversation_history=history,
             no_task_planned=no_task_planned)

@@ -4,7 +4,7 @@ import json
 import time
 import traceback
 
-from kwaiagents.config import CFG
+from kwaiagents.config import Config
 from kwaiagents.llms.clients import OpenAIClient, FastChatClient
 
 
@@ -13,17 +13,18 @@ def create_chat_completion(
         history: list[tuple[str, str]] = list(),
         system: str = "",
         llm_model_name: str = "gpt-3.5-turbo",
-        temperature: float = CFG.temperature,
         max_tokens: int = None,
         stop: str = "",
-        chat_id: str = None
+        chat_id: str = None,
+        config: Config = None
 ) -> tuple[str, list[tuple[str, str]]]:
-    if CFG.use_local_llm:
-        llm_bot = FastChatClient(llm_model_name.lower(), host=CFG.local_llm_host, port=CFG.local_llm_port)
+    if config.use_local_llm:
+        llm_bot = FastChatClient(llm_model_name.lower(), host=config.local_llm_host,
+                                 port=config.local_llm_port)
     else:
         llm_bot = OpenAIClient(llm_model_name.lower())
     response = None
-    num_retries = CFG.llm_max_retries
+    num_retries = config.llm_max_retries
     for attempt in range(num_retries):
         backoff = 2 ** (attempt + 2)
         try:
@@ -31,7 +32,7 @@ def create_chat_completion(
                 query=query,
                 history=history,
                 system=system,
-                temperature=temperature,
+                temperature=config.temperature,
                 stop=stop,
                 chat_id=chat_id
             )
@@ -51,5 +52,5 @@ def create_chat_completion(
 
 def print_chat_jsonl(instruction, output: str):
     rjson = {"instruction": instruction, "output": output}
-    with open("chat.jsonl", "a",encoding='utf-8') as file:
-        print(json.dumps(rjson,ensure_ascii=False), file=file)
+    with open("chat.jsonl", "a", encoding='utf-8') as file:
+        print(json.dumps(rjson, ensure_ascii=False), file=file)

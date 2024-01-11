@@ -1,11 +1,11 @@
 import json
+import os
 import re
 from typing import List, Dict
 
 import gradio as gr
 
 from kwaiagents.agent_start import AgentService
-from kwaiagents.config import CFG
 
 
 def build_history_list(history: []) -> List[Dict]:
@@ -18,8 +18,22 @@ def build_history_list(history: []) -> List[Dict]:
     return chat_history
 
 
+def select_llm(use_local_llm):
+    if use_local_llm == "是":
+        yield gr.update(choices=["kagentlms_qwen_7b_mat"], value="kagentlms_qwen_7b_mat"), gr.update(
+            visible=True), gr.update(visible=True), gr.update(visible=False)
+    else:
+        yield gr.update(choices=["gpt-3.5-turbo"], value="gpt-3.5-turbo"), gr.update(visible=False), gr.update(
+            visible=False), gr.update(visible=True)
+
+
+def clear_historys():
+    yield None
+
+
 def get_pre_answer(query, history):
     yield history + [[query, None]], ""
+
 
 def have_image_to_md(text):
     pattern = r"(http[s]?:\/\/[^\s]+(?:jpe?g|png|gif))"
@@ -28,11 +42,19 @@ def have_image_to_md(text):
     # Print the matched image links
     for match in matches:
         md_image_url = f"![image]({match})"
-        text = text.replace(match,md_image_url)
+        text = text.replace(match, md_image_url)
 
     return text
 
-def get_base_answer(query, history):
+
+def get_base_answer(query, history, use_local_llm, llm_name, local_llm_host, local_llm_port, openai_api_key, lang,
+                    max_iter_num):
+    os.environ["OPENAI_API_KEY"] = openai_api_key
+    if use_local_llm == "是":
+        use_local_llm_b = True
+    else:
+        use_local_llm_b = False
+
     if query == "" and history[-1][1] is None:
         query = history[-1][0]
         history = history[:-1]
@@ -42,16 +64,13 @@ def get_base_answer(query, history):
         "id": "webui",
         "query": query,
         "history": hist,
-        "use_local_llm": True,
-        "llm_name": "kagentlms_qwen_7b_mat",
-        "local_llm_host": "localhost",
-        "local_llm_port": 8888,
-        "lang": "zh",
-        "max_iter_num": 5,
+        "use_local_llm": use_local_llm_b,
+        "llm_name": llm_name,
+        "local_llm_host": local_llm_host,
+        "local_llm_port": local_llm_port,
+        "lang": lang,
+        "max_iter_num": max_iter_num,
     }
-    CFG.local_llm_host = args["local_llm_host"]
-    CFG.local_llm_port = args["local_llm_port"]
-    CFG.use_local_llm = args["use_local_llm"]
     agent_service = AgentService()
     result = agent_service.chat(args)
 
@@ -88,17 +107,44 @@ def start_ui():
         gr.Markdown(webui_title)
         with gr.Tab("自动代理"):
             with gr.Row():
-                with gr.Column(scale=10):
+                with gr.Column(scale=15):
                     # 聊天框模块
-                    chatbot = gr.Chatbot([], height=800,
+                    chatbot = gr.Chatbot([], height=700, label="对话",
                                          elem_id="chat-box")
 
-                    query = gr.Textbox(placeholder="请输入提问内容，按回车进行提交")
-                    query.submit(fn=get_pre_answer,
-                                 inputs=[query, chatbot],
-                                 outputs=[chatbot, query]).then(fn=get_base_answer,
-                                                                inputs=[query, chatbot],
-                                                                outputs=[chatbot, query])
+                with gr.Column(scale=5):
+                    with gr.Accordion("Agent配置"):
+                        with gr.Accordion("模型配置"):
+                            use_local_llm = gr.Radio(["是", "否"], label="使用本地模型", value="是")
+                            llm_name = gr.Radio(["kagentlms_qwen_7b_mat"], label="模型名称",
+                                                value="kagentlms_qwen_7b_mat")
+                            local_llm_host = gr.Textbox(label="本地模型主机", placeholder="请输入本地模型主机",
+                                                        value="127.0.0.1")
+                            local_llm_port = gr.Number(label="本地模型端口", value=8888, precision=0)
+                            openai_api_key = gr.Textbox(label="OPENAI_API_KEY", visible=False)
+                        lang = gr.Radio(["zh", "en"], label="语言", value="zh")
+                        max_iter_num = gr.Number(label="最大思考次数", value=3, precision=0)
+
+                        use_local_llm.change(fn=select_llm, inputs=[use_local_llm],
+                                             outputs=[llm_name, local_llm_host, local_llm_port, openai_api_key])
+
+            with gr.Row():
+                with gr.Column(scale=15):
+                    query = gr.Textbox(label="问题", placeholder="请输入提问内容，按回车进行提交")
+                with gr.Column(scale=5):
+                    clear = gr.Button("清空历史")
+
+                query.submit(fn=get_pre_answer,
+                             inputs=[query, chatbot],
+                             outputs=[chatbot, query]).then(fn=get_base_answer,
+                                                            inputs=[query, chatbot,
+                                                                    use_local_llm, llm_name, local_llm_host,
+                                                                    local_llm_port, openai_api_key,
+                                                                    lang, max_iter_num],
+                                                            outputs=[chatbot, query])
+                clear.click(fn=clear_historys,
+                            inputs=[],
+                            outputs=[chatbot])
 
         demo.load(
             queue=True,

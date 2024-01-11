@@ -1,5 +1,6 @@
 import json
 import re
+
 """Text processing functions"""
 from typing import Generator, Optional, Dict
 from selenium.webdriver.remote.webdriver import WebDriver
@@ -56,7 +57,7 @@ def split_text(text: str, max_length: int = 4096) -> Generator[str, None, None]:
 
 
 def summarize_text(
-    url: str, text: str, question: str, driver: Optional[WebDriver] = None, cfg: Config = None
+        url: str, text: str, question: str, driver: Optional[WebDriver] = None, cfg: Config = None
 ) -> str:
     """Summarize text using the OpenAI API
 
@@ -96,10 +97,11 @@ def summarize_text(
                 for chunk in batch_chunk
             ]
             batch_summaries, _ = create_chat_completion(
-                    query=batch,
-                    llm_model_name=cfg.fast_llm_model,
-                    max_tokens=cfg.browse_summary_max_token,
-                )
+                query=batch,
+                llm_model_name=cfg.fast_llm_model,
+                max_tokens=cfg.browse_summary_max_token,
+                config=cfg
+            )
             if isinstance(batch_summaries, str):
                 batch_summaries = json.loads(batch_summaries)
             summaries.extend(batch_summaries)
@@ -116,7 +118,6 @@ def summarize_text(
 
             # MEMORY.add(memory_to_add)
 
-
             cfg.chain_logger.put("reading", f"第 {i + 1} / {len(chunks)} 个段落")
             message = create_message(chunk, question)
 
@@ -129,7 +130,7 @@ def summarize_text(
             except:
                 summary = ""
             summaries.append(summary)
-            
+
             prompt_responses.append((message, summary))
         # print(f"Added chunk {i + 1} summary to memory")
 
@@ -148,10 +149,11 @@ def summarize_text(
     message = create_message(combined_summary, question)
 
     summary, _ = create_chat_completion(
-            query=message,
-            llm_model_name=cfg.fast_llm_model,
-            max_tokens=cfg.browse_summary_max_token,
-        )
+        query=message,
+        llm_model_name=cfg.fast_llm_model,
+        max_tokens=cfg.browse_summary_max_token,
+        config=cfg
+    )
     prompt_responses.append((message, summary))
 
     return summary, prompt_responses
@@ -182,7 +184,7 @@ def create_message(chunk: str, question: str) -> Dict[str, str]:
     Returns:
         Dict[str, str]: The message to send to the chat completion
     """
-    return f'"""{chunk}""" 基于上述文本回答下面的问题 ' +\
+    return f'"""{chunk}""" 基于上述文本回答下面的问题 ' + \
         f'问题: "{question}" -- 假如无法回答这个问题，则总结上述文本：'
 
 
