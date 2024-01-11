@@ -123,7 +123,7 @@ def start_ui():
                             local_llm_port = gr.Number(label="本地模型端口", value=8888, precision=0)
                             openai_api_key = gr.Textbox(label="OPENAI_API_KEY", visible=False)
                         lang = gr.Radio(["zh", "en"], label="语言", value="zh")
-                        max_iter_num = gr.Number(label="最大思考次数", value=3, precision=0)
+                        max_iter_num = gr.Number(label="最大思考次数", value=5, precision=0)
 
                         use_local_llm.change(fn=select_llm, inputs=[use_local_llm],
                                              outputs=[llm_name, local_llm_host, local_llm_port, openai_api_key])

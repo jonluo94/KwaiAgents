@@ -129,7 +129,10 @@ class KAgentSysLite(object):
         # print(prompt)
         try:
             response, _ = create_chat_completion(
-                query=prompt, llm_model_name=self.cfg.smart_llm_model, config=self.cfg)
+                query=prompt,
+                llm_model_name=self.cfg.smart_llm_model,
+                config=self.cfg
+            )
             self.chain_logger.put_prompt_response(
                 prompt=prompt,
                 response=response,

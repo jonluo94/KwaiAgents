@@ -58,7 +58,7 @@ def split_text(text: str, max_length: int = 4096) -> Generator[str, None, None]:
 
 def summarize_text(
         url: str, text: str, question: str, driver: Optional[WebDriver] = None, cfg: Config = None
-) -> str:
+) -> (str, list[tuple[str, str]]):
     """Summarize text using the OpenAI API
 
     Args:
@@ -70,6 +70,7 @@ def summarize_text(
 
     Returns:
         str: The summary of the text
+        list: every paragraph message And summary
     """
     if not text:
         return "Error: No text to summarize", []
@@ -96,6 +97,7 @@ def summarize_text(
                 create_message(chunk, question)
                 for chunk in batch_chunk
             ]
+            #todo: bug?
             batch_summaries, _ = create_chat_completion(
                 query=batch,
                 llm_model_name=cfg.fast_llm_model,
@@ -126,6 +128,7 @@ def summarize_text(
                     query=message,
                     llm_model_name=cfg.fast_llm_model,
                     max_tokens=cfg.browse_summary_max_token,
+                    config=cfg
                 )
             except:
                 summary = ""
@@ -174,7 +177,7 @@ def scroll_to_percentage(driver: WebDriver, ratio: float) -> None:
     driver.execute_script(f"window.scrollTo(0, document.body.scrollHeight * {ratio});")
 
 
-def create_message(chunk: str, question: str) -> Dict[str, str]:
+def create_message(chunk: str, question: str) -> str:
     """Create a message for the chat completion
 
     Args:
