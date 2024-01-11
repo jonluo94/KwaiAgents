@@ -9,6 +9,10 @@ openai==0.27.8
 translate==3.6.1
 ephem==4.1.4
 
+transformers>=4.33.2
+tiktoken
+
+
 diffusers~=0.24.0
 docker~=7.0.0
 gradio==3.41.0
@@ -26,3 +30,4 @@ fastapi~=0.108.0
 beautifulsoup4~=4.12.2
 python-dateutil~=2.8.2
 jsonlines~=4.0.0
+

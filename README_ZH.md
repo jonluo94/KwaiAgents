@@ -19,7 +19,6 @@ KwaiAgents 是[快手快知团队](https://github.com/KwaiKEG)开源的一整套
 3. **KAgentInstruct**：超过20w（部分人工编辑）的Agent相关的指令微调数据
 4. **KAgentBench**：>超过三千条经人工编辑的自动化评测Agent能力数据，能力评测维度包含规划、工具使用、反思、总结、人设指令等
 
-
 <table>
     <tr>
         <th>模型</th><th>训练数据</th><th>Benchmark</th>
@@ -34,11 +33,7 @@ KwaiAgents 是[快手快知团队](https://github.com/KwaiKEG)开源的一整套
     </tr>
 </table>
 
-<br>
-
-<p align="center">
-    <img src="blob/example-zh.gif"/>
-<p>
+<img src="blob/example-zh.gif"/>
 
 <br>
 
@@ -58,15 +53,15 @@ KwaiAgents 是[快手快知团队](https://github.com/KwaiKEG)开源的一整套
 
 |                | Scale | Planning | Tool-use | Reflection | Concluding | Profile | Overall Score |
 |----------------|-------|----------|----------|------------|------------|---------|---------------|
-| GPT-3.5-turbo  |   -   |  18.55   |  15.89   |    5.32    |   37.26    |  35.42  |     21.72     |
-| Llama2         |  13B  |   0.15   |   0.23   |    0.08    |   16.60    |  17.73  |      5.22     |
-| ChatGLM3       |  6B   |   7.87   |   6.82   |    4.49    |   30.01    |  30.14  |     13.82     |
-| Qwen           |  7B   |  13.34   |  10.87   |    4.73    |   36.24    |  34.99  |     18.36     |
-| Baichuan2      |  13B  |   6.70   |  10.11   |    4.25    |   24.97    |  19.08  |     12.54     |
-| ToolLlama      |  7B   |   0.20   |   3.44   |    0.54    |   15.62    |  10.66  |      5.50     |
-| AgentLM        |  13B  |   0.17   |   0.09   |    0.05    |   16.30    |  15.22  |      4.86     |
-| Qwen-MAT       |  7B   |  31.64   |  28.26   |   29.50    |   44.85    |  44.78  |     34.20     |
-| Baichuan2-MAT  |  13B  |  37.27   |  34.82   |   32.06    |   48.01    |  41.83  |     38.49     |
+| GPT-3.5-turbo  |   -   |  18.55   |  26.26   |    8.06    |   37.26    |  35.42  |     25.63     |
+| Llama2         |  13B  |   0.15   |   0.44   |    0.14    |   16.60    |  17.73  |      5.30     |
+| ChatGLM3       |  6B   |   7.87   |  11.84   |    7.52    |   30.01    |  30.14  |     15.88     |
+| Qwen           |  7B   |  13.34   |  18.00   |    7.91    |   36.24    |  34.99  |     21.17     |
+| Baichuan2      |  13B  |   6.70   |  16.10   |    6.76    |   24.97    |  19.08  |     14.89     |
+| ToolLlama      |  7B   |   0.20   |   4.83   |    1.06    |   15.62    |  10.66  |      6.04     |
+| AgentLM        |  13B  |   0.17   |   0.15   |    0.05    |   16.30    |  15.22  |      4.88     |
+| Qwen-MAT       |  7B   |  31.64   |  43.30   |   33.34    |   44.85    |  44.78  |     39.85     |
+| Baichuan2-MAT  |  13B  |  37.27   |  52.97   |   37.00    |   48.01    |  41.83  |     45.34     |
 
 
 2. KAgentSys在人工评测上的表现 （百分号前的表示通过率，括号后表示平均分）
@@ -83,6 +78,7 @@ KwaiAgents 是[快手快知团队](https://github.com/KwaiKEG)开源的一整套
 ## 使用指南
 
 ### AgentLMs 系列模型使用
+#### 在GPU上用vLLM部署
 我们建议用[vLLM](https://github.com/vllm-project/vllm)和[FastChat](https://github.com/lm-sys/FastChat)来部署模型推理服务，首先需要安装对应的包(详细使用请参考两个项目对应文档)：
 1. 对于 Qwen-7B-MAT，按如下方法安装
 ```bash
@@ -118,6 +114,19 @@ curl http://localhost:8888/v1/chat/completions \
 ```
 这里 `kagentlms_qwen_7b_mat` 要改成你部署的模型。
 
+#### 在CPU上用[Lamma.cpp](https://github.com/ggerganov/llama.cpp)部署
+llama-cpp-python 提供了类似OpenAI的API Web接口，我们可以按如下方法安装和部署。转换后的模型可以在[kwaikeg/kagentlms_qwen_7b_mat_gguf](https://huggingface.co/kwaikeg/kagentlms_qwen_7b_mat_gguf)上找到。
+```bash
+pip install "llama-cpp-python[server]"
+python3 -m llama_cpp.server --model kagentlms_qwen_7b_mat_gguf/ggml-model-q4_0.gguf --chat_format chatml --port 8888
+```
+
+最后你就可以用curl命令对应OpenAI调用格式进行模型调用啦，参考示例：
+```bash
+curl http://localhost:8888/v1/chat/completions \
+-H "Content-Type: application/json" \
+-d '{"messages": [{"role": "user", "content": "刘德华是谁"}]}'
+```
 
 ### KAgentSys-Lite 快速使用
 下载并安装环境包，建议Python>=3.10
@@ -181,7 +190,7 @@ python benchmark_eval.py ./benchmark_eval.jsonl ./qwen_benchmark_res.jsonl
 ```
 上面的命令会输出以下结果
 ```
-plan : 31.64, tooluse : 28.26, reflextion : 29.50, conclusion : 44.85, profile : 44.78, overall : 34.20
+plan : 31.64, tooluse : 43.30, reflextion : 33.34, conclusion : 44.85, profile : 44.78, overall : 39.85
 ```
 更多细节请参考 <a href="benchmark/">benchmark</a> 
 
