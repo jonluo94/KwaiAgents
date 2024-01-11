@@ -142,4 +142,4 @@ def add_header(driver: WebDriver) -> None:
         None
     """
     if driver:
-        driver.execute_script(open(f"{FILE_DIR}/js/overlay.js", "r").read())
+        pass

@@ -8,17 +8,14 @@ webdriver-manager==3.8.6
 openai==0.27.8
 translate==3.6.1
 ephem==4.1.4
-
 transformers>=4.33.2
 tiktoken
-
 
 diffusers~=0.24.0
 docker~=7.0.0
 gradio==3.41.0
 setuptools~=65.5.1
 torch~=2.1.2
-transformers~=4.36.2
 tqdm~=4.66.1
 nltk~=3.8.1
 rouge~=1.0.1
