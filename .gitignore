@@ -163,3 +163,20 @@ scripts/stat1.py
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
+env
+*.pyc
+__pycache__
+
+.idea
+.vscode
+.DS_Store
+
+venv
+log/*
+build/*
+
+*.log
+*.out
+*.jsonl
+
+diffusion/images

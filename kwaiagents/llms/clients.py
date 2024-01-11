@@ -83,6 +83,7 @@ class FastChatClient(object):
             prompt = self.make_qwen_prompt(query, system, history)
         else:
             prompt = self.make_prompt(query, system, history)
+        print(f"Call LLM prompt:\n{prompt}")
         data = {
             "model": self.model,
             "prompt": prompt,

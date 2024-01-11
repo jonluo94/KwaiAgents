@@ -158,23 +158,23 @@ kagentsys --query="刘德华老婆是谁？" --llm_name="kagentlms_qwen_7b_mat" 
 
 下面是完整的命令行参数
 
-| 参数名 | 类型 | 默认值 | 描述 |
-| ----- | ---- | ------ | --- |
-| --id | str | test | 对话的ID |
-| --query | str |  | 用户查询问题 |
-| --history | str | [] | 对话历史 |
-| --llm_name | str | gpt-3.5-turbo | LLM的名称 |
-| --use_local_llm | str | False | 是否使用本地LLM |
-| --local_llm_host | str | localhost | 本地LLM部署的IP |
-| --local_llm_port | int | 8888 | 本地LLM部署的端口 |
-| --tool_names | str | ["auto"] | 使用工具的列表，可选有 web_search,browse_website,get_weather_info,get_calendar_info,time_delta,get_solar_terms_info |
-| --max_iter_num | int | 1 | agent迭代次数 |
-| --agent_name | str |  | agent名称 |
-| --agent_bio | str |  | agent简介，简短的描述 |
-| --agent_instructions | str | | agent的指导原则，描述agent如何思考、行动、或交流 |
-| --external_knowledge | str |  | 外部知识链接 |
-| --lang | str | en | 系统的语言，可选（英语/中文） |
-| --max_tokens_num | int | 4096 | Prompt截断最大长度 |
+| 参数名 | 类型 | 默认值 | 描述                                                                                                                            |
+| ----- | ---- | ------ |-------------------------------------------------------------------------------------------------------------------------------|
+| --id | str | test | 对话的ID                                                                                                                         |
+| --query | str |  | 用户查询问题                                                                                                                        |
+| --history | str | [] | 对话历史                                                                                                                          |
+| --llm_name | str | gpt-3.5-turbo | LLM的名称                                                                                                                        |
+| --use_local_llm | str | False | 是否使用本地LLM                                                                                                                     |
+| --local_llm_host | str | localhost | 本地LLM部署的IP                                                                                                                    |
+| --local_llm_port | int | 8888 | 本地LLM部署的端口                                                                                                                    |
+| --tool_names | str | ["auto"] | 使用工具的列表，可选有 web_search,browse_website,get_weather_info,get_calendar_info,time_delta,get_solar_terms_info,image_gen,code_interpreter,math_calculater |
+| --max_iter_num | int | 1 | agent迭代次数                                                                                                                     |
+| --agent_name | str |  | agent名称                                                                                                                       |
+| --agent_bio | str |  | agent简介，简短的描述                                                                                                                 |
+| --agent_instructions | str | | agent的指导原则，描述agent如何思考、行动、或交流                                                                                                 |
+| --external_knowledge | str |  | 外部知识链接                                                                                                                        |
+| --lang | str | en | 系统的语言，可选（英语/中文）                                                                                                               |
+| --max_tokens_num | int | 4096 | Prompt截断最大长度                                                                                                                  |
 
 **提示**：
 1. 如果需要用到 browse_website 工具，需要在服务器上配置[chromedriver](https://chromedriver.chromium.org/getting-started)
