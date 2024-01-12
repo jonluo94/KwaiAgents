@@ -10,7 +10,7 @@ python diffusion/server.py --host=127.0.0.1 --port=8080 --external_access_url=ht
 export DIFFUSION_SERVER_URL=http://127.0.0.1:8080
 ```
 ## 代码解析器
-1. **安装docker**
+**安装docker**
 
 ## 数学计算器
-1. **依赖代码解析器**
+**依赖代码解析器**

@@ -48,7 +48,9 @@ def have_image_to_md(text):
 
 
 def get_base_answer(query, history, use_local_llm, llm_name, local_llm_host, local_llm_port, openai_api_key, lang,
-                    max_iter_num):
+                    max_iter_num, tools):
+    if len(tools) == 0:
+        tools.append("auto")
     os.environ["OPENAI_API_KEY"] = openai_api_key
     if use_local_llm == "是":
         use_local_llm_b = True
@@ -70,6 +72,7 @@ def get_base_answer(query, history, use_local_llm, llm_name, local_llm_host, loc
         "local_llm_port": local_llm_port,
         "lang": lang,
         "max_iter_num": max_iter_num,
+        "tool_names": tools,
     }
     agent_service = AgentService()
     result = agent_service.chat(args)
@@ -97,19 +100,14 @@ default_theme_args = dict(
     font_mono=['IBM Plex Mono', 'ui-monospace', 'Consolas', 'monospace'],
 )
 
-webui_title = """
-Inter Agent (大模型自动处理任务) 
-"""
-
 
 def start_ui():
     with gr.Blocks(css=block_css, theme=gr.themes.Default(**default_theme_args)) as demo:
-        gr.Markdown(webui_title)
-        with gr.Tab("自动代理"):
+        with gr.Tab("Inter Agent"):
             with gr.Row():
                 with gr.Column(scale=15):
                     # 聊天框模块
-                    chatbot = gr.Chatbot([], height=700, label="对话",
+                    chatbot = gr.Chatbot([], height=1000, label="对话",
                                          elem_id="chat-box")
 
                 with gr.Column(scale=5):
@@ -124,7 +122,11 @@ def start_ui():
                             openai_api_key = gr.Textbox(label="OPENAI_API_KEY", visible=False)
                         lang = gr.Radio(["zh", "en"], label="语言", value="zh")
                         max_iter_num = gr.Number(label="最大思考次数", value=5, precision=0)
-
+                        tools = gr.CheckboxGroup(["web_search", "browse_website",
+                                                  "get_weather_info", "get_calendar_info",
+                                                  "time_delta", "get_solar_terms_info",
+                                                  "image_gen", "code_interpreter", "math_calculater"],
+                                                 label="工具", info="默认全部")
                         use_local_llm.change(fn=select_llm, inputs=[use_local_llm],
                                              outputs=[llm_name, local_llm_host, local_llm_port, openai_api_key])
 
@@ -140,7 +142,7 @@ def start_ui():
                                                             inputs=[query, chatbot,
                                                                     use_local_llm, llm_name, local_llm_host,
                                                                     local_llm_port, openai_api_key,
-                                                                    lang, max_iter_num],
+                                                                    lang, max_iter_num, tools],
                                                             outputs=[chatbot, query])
                 clear.click(fn=clear_historys,
                             inputs=[],
