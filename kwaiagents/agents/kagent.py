@@ -215,6 +215,7 @@ class KAgentSysLite(object):
         return response
 
     def check_task_complete(self, task, iter_id):
+        print("check_task_complete:", task)
         command_name = task["command"]["name"]
         if not task or ("task_name" not in task) or ("command" not in task) \
                 or ("args" not in task["command"]) or ("name" not in task["command"]):

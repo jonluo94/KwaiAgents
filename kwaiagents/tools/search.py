@@ -27,8 +27,10 @@ class SearchResult(BaseResult):
         if not self.json_data:
             return ""
         else:
-            return "\n" + "\n".join([f'{idx + 1}. <a href="{item["href"]}" target="_blank"><b>{item["title"]}</b></a>' + " | " + item["body"] 
-                for idx, item in enumerate(self.json_data)])
+            return "\n" + "\n".join([
+                                        f'{idx + 1}. <a href="{item["href"]}" target="_blank"><b>{item["title"]}</b></a>' + " | " +
+                                        item["body"]
+                                        for idx, item in enumerate(self.json_data)])
 
     @property
     def answer_full(self):
@@ -52,8 +54,8 @@ class SearchTool(BaseTool):
     zh_name = "网页搜索"
     description = "Web Search:\"web_search\",args:\"text\":\"<search>\""
     tips = ""
-    
-    def __init__(self, cfg=None, max_search_nums=5, lang="wt-wt", max_retry_times=5, *args, **kwargs):
+
+    def __init__(self, cfg=None, max_search_nums=5, lang="wt-wt", max_retry_times=3, *args, **kwargs):
         self.cfg = cfg if cfg else Config()
         self.max_search_nums = max_search_nums
         self.max_retry_times = max_retry_times
@@ -68,7 +70,7 @@ class SearchTool(BaseTool):
             self.driver = None
         else:
             self.driver = driver
-            
+
     def get_results_by_selenium(self, keyword):
         url = f"https://duckduckgo.com/?q={keyword}&t=h_&ia=web"
         driver, page_source = get_pagesource_with_selenium(url, "chrome", self.driver)
@@ -111,6 +113,7 @@ class SearchTool(BaseTool):
             }]
         try:
             use_selenium = False
+            search_results = None
             try:
                 search_results = self.get_results_by_ddg(keyword)
             except:
@@ -120,7 +123,8 @@ class SearchTool(BaseTool):
                 use_selenium = True
             if use_selenium:
                 search_results = self.get_results_by_selenium(keyword)
-            if search_results and ("Google Patents" in search_results[0]["body"] or "patent" in search_results[0]["href"]):
+            if search_results and (
+                    "Google Patents" in search_results[0]["body"] or "patent" in search_results[0]["href"]):
                 search_results = list()
             if not search_results:
                 return self._retry_search_result(keyword, counter)
@@ -129,6 +133,6 @@ class SearchTool(BaseTool):
             print(traceback.format_exc())
             print("Retry search...")
             return self._retry_search_result(keyword, counter)
-        
+
     def __call__(self, text):
         return SearchResult(self._retry_search_result(text))

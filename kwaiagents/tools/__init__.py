@@ -8,7 +8,10 @@ from .calendars import CalendarTool
 from .timedelta import TimeDeltaTool
 from .solarterms import SolarTermsTool
 from .diffusion import DiffusionTool
+from .bilibili_crawler import BilibiliCrawlerTool
 
 ALL_NO_TOOLS = [NoTool, FinishTool]
-ALL_AUTO_TOOLS = [SearchTool, BrowserTool, WeatherTool, CalendarTool, TimeDeltaTool, SolarTermsTool, DiffusionTool,CodeInterpreterTool,MathCalculaterTool]
-ALL_TOOLS = [SearchTool, BrowserTool, WeatherTool, CalendarTool, TimeDeltaTool, SolarTermsTool, DiffusionTool,CodeInterpreterTool,MathCalculaterTool]
+ALL_AUTO_TOOLS = [SearchTool, BrowserTool, WeatherTool, CalendarTool, TimeDeltaTool, SolarTermsTool, DiffusionTool,
+                  CodeInterpreterTool, MathCalculaterTool, BilibiliCrawlerTool]
+ALL_TOOLS = [SearchTool, BrowserTool, WeatherTool, CalendarTool, TimeDeltaTool, SolarTermsTool, DiffusionTool,
+             CodeInterpreterTool, MathCalculaterTool, BilibiliCrawlerTool]

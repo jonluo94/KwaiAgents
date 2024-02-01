@@ -125,7 +125,8 @@ def start_ui():
                         tools = gr.CheckboxGroup(["web_search", "browse_website",
                                                   "get_weather_info", "get_calendar_info",
                                                   "time_delta", "get_solar_terms_info",
-                                                  "image_gen", "code_interpreter", "math_calculater"],
+                                                  "image_gen", "code_interpreter", "math_calculater",
+                                                  "bilibili_crawler"],
                                                  label="工具", info="默认全部")
                         use_local_llm.change(fn=select_llm, inputs=[use_local_llm],
                                              outputs=[llm_name, local_llm_host, local_llm_port, openai_api_key])
