@@ -35,3 +35,8 @@ aiohttp~=3.8.6
 qrcode~=7.4.2
 Pillow~=10.0.1
 pyzbar~=0.1.9
+
+chromadb
+pluggy
+psycopg2-binary
+onnxruntime<1.15

@@ -170,3 +170,5 @@ build/*
 *.out
 *.jsonl
 diffusion/images
+chromadb
+memory.json
