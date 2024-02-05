@@ -7,7 +7,7 @@ from itertools import repeat
 import psycopg2
 from .base import AgentMemory, CollectionMemory, AgentCollection
 from .check_model import check_model, infer_embeddings
-from .config import POSTGRES_CONNECTION_STRING, POSTGRES_EMBEDDING_WIDTH
+from .config import POSTGRES_CONNECTION_STRING
 
 
 def parse_metadata(where):
@@ -245,20 +245,25 @@ class PostgresClient(AgentMemory):
             connection_string,
             model_name="all-MiniLM-L6-v2",
             model_path=str(Path.home() / ".cache" / "onnx_models"),
-            embedding_width=512,
+            embedding_width=384,
     ):
         self.connection = psycopg2.connect(connection_string)
         self.cur = self.connection.cursor()
         from pgvector.psycopg2 import register_vector
-
+        self.ensure_vector_exists()
         register_vector(self.cur)  # Register PGVector functions
         full_model_path = check_model(model_name=model_name, model_path=model_path)
         self.model_path = full_model_path
         self.embedding_width = embedding_width
         self.collections = {}
 
+
     def _table_name(self, category):
         return f"memory_{category}"
+
+    def ensure_vector_exists(self):
+        self.cur.execute(f"""CREATE EXTENSION IF NOT EXISTS vector;""")
+        self.connection.commit()
 
     def ensure_table_exists(self, category):
         table_name = self._table_name(category)
@@ -462,4 +467,4 @@ def create_client():
         raise EnvironmentError(
             "POSTGRES_CONNECTION_STRING not set in environment variables!"
         )
-    return PostgresClient(POSTGRES_CONNECTION_STRING, embedding_width= POSTGRES_EMBEDDING_WIDTH)
+    return PostgresClient(POSTGRES_CONNECTION_STRING)

@@ -17,3 +17,6 @@ stop-fschat:
         kill -9 $$f; \
         echo "kill $$f"; \
     done
+
+run-docker-compose-postgres:
+	docker-compose -f docker-compose-postgres.yml up
