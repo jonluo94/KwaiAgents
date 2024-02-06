@@ -40,3 +40,4 @@ chromadb
 pluggy
 psycopg2-binary
 onnxruntime<1.15
+sentence_transformers

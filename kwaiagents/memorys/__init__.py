@@ -32,9 +32,8 @@ from .base import (
     hookimpl,
 )
 
-from .check_model import (
-    check_model,
-    infer_embeddings,
+from .embedding import (
+    init_embedding,
 )
 
 load_dotenv()
@@ -60,6 +59,5 @@ __all__ = [
     "import_file_to_memory",
     "get_client",
     "hookimpl",
-    "check_model",
-    "infer_embeddings",
+    "init_embedding",
 ]

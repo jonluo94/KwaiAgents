@@ -3,11 +3,10 @@ from pathlib import Path
 import os
 from functools import reduce
 from itertools import repeat
-
+from pgvector.psycopg2 import register_vector
 import psycopg2
 from .base import AgentMemory, CollectionMemory, AgentCollection
-from .check_model import check_model, infer_embeddings
-from .config import POSTGRES_CONNECTION_STRING
+from .config import POSTGRES_CONNECTION_STRING, EMBEDDING_MODEL
 
 
 def parse_metadata(where):
@@ -99,7 +98,7 @@ def parse_conditions(where=None, where_document=None, ids=None):
 
 
 class PostgresCollection(CollectionMemory):
-    def __init__(self, category, client: PostgresClient, metadata=None):
+    def __init__(self, category, client: PostgresMemory, metadata=None):
         self.category = category
         self.client = client
         self.metadata = metadata or {}
@@ -239,21 +238,17 @@ class PostgresCollection(CollectionMemory):
         self.client.connection.commit()
 
 
-class PostgresClient(AgentMemory):
+class PostgresMemory(AgentMemory):
     def __init__(
             self,
             connection_string,
-            model_name="all-MiniLM-L6-v2",
-            model_path=str(Path.home() / ".cache" / "onnx_models"),
-            embedding_width=384,
+            embedding_width=1024,
     ):
         self.connection = psycopg2.connect(connection_string)
         self.cur = self.connection.cursor()
-        from pgvector.psycopg2 import register_vector
         self.ensure_vector_exists()
         register_vector(self.cur)  # Register PGVector functions
-        full_model_path = check_model(model_name=model_name, model_path=model_path)
-        self.model_path = full_model_path
+        self.embedding_function = EMBEDDING_MODEL
         self.embedding_width = embedding_width
         self.collections = {}
 
@@ -347,12 +342,13 @@ class PostgresClient(AgentMemory):
         INSERT INTO {table_name} ({', '.join(columns)}) VALUES ({', '.join(placeholders)})
         RETURNING id;
         """
+
         self.cur.execute(query, tuple(values))
         self.connection.commit()
         return self.cur.fetchone()[0]
 
     def create_embedding(self, document):
-        embeddings = infer_embeddings([document], model_path=self.model_path)
+        embeddings = self.embedding_function.infer_embeddings([document])
         return embeddings[0]
 
     def add(self, category, documents, metadatas, ids):
@@ -467,4 +463,4 @@ def create_client():
         raise EnvironmentError(
             "POSTGRES_CONNECTION_STRING not set in environment variables!"
         )
-    return PostgresClient(POSTGRES_CONNECTION_STRING)
+    return PostgresMemory(POSTGRES_CONNECTION_STRING)

@@ -1,9 +1,7 @@
-import os
-
 import chromadb
 
 from .base import CollectionMemory, AgentMemory
-from .config import CHROMADB_STORAGE_PATH
+from .config import CHROMADB_STORAGE_PATH, EMBEDDING_MODEL
 
 
 class ChromaCollectionMemory(CollectionMemory):
@@ -61,13 +59,14 @@ class ChromaCollectionMemory(CollectionMemory):
 class ChromaMemory(AgentMemory):
     def __init__(self, path) -> None:
         self.chroma = chromadb.PersistentClient(path=path)
+        self.embedding_function = EMBEDDING_MODEL
 
     def get_or_create_collection(self, category, metadata=None) -> CollectionMemory:
-        memory = self.chroma.get_or_create_collection(category)
+        memory = self.chroma.get_or_create_collection(category, embedding_function=self.embedding_function)
         return ChromaCollectionMemory(memory, metadata)
 
     def get_collection(self, category) -> CollectionMemory:
-        memory = self.chroma.get_collection(category)
+        memory = self.chroma.get_collection(category, embedding_function=self.embedding_function)
         return ChromaCollectionMemory(memory)
 
     def delete_collection(self, category):
