@@ -45,3 +45,6 @@ class MemoryEmbeddingFunction(EmbeddingFunction[Documents]):
 #
 def init_embedding(model_name: str):
     return MemoryEmbeddingFunction(model_name=model_name)
+
+
+EMBEDDING_MODEL = init_embedding("BAAI/bge-m3")

@@ -1,12 +1,11 @@
 from __future__ import annotations
-from pathlib import Path
-import os
 from functools import reduce
 from itertools import repeat
 from pgvector.psycopg2 import register_vector
 import psycopg2
 from .base import AgentMemory, CollectionMemory, AgentCollection
-from .config import POSTGRES_CONNECTION_STRING, EMBEDDING_MODEL
+from .config import POSTGRES_CONNECTION_STRING
+from .embedding import EMBEDDING_MODEL
 
 
 def parse_metadata(where):

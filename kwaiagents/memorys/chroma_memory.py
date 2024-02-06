@@ -1,7 +1,8 @@
 import chromadb
 
 from .base import CollectionMemory, AgentMemory
-from .config import CHROMADB_STORAGE_PATH, EMBEDDING_MODEL
+from .config import CHROMADB_STORAGE_PATH
+from .embedding import EMBEDDING_MODEL
 
 
 class ChromaCollectionMemory(CollectionMemory):
