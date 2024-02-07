@@ -3,7 +3,6 @@ import json
 from kwaiagents.utils.date_utils import get_current_time_and_date
 from kwaiagents.utils.function_utils import transform_to_openai_function
 
-
 planning_prompt_template = """
 你是{agent_name}，{agent_bio}
 {agent_instructions}
@@ -81,7 +80,6 @@ Ensure that the Task can be parsed by Python's json.loads function.
 If the already completed Tasks are sufficient to answer the goal, then try to generate the Task to complete it as much as possible. Otherwise, create another Task. 
 A new Task:
 """.strip()
-
 
 conclusion_prompt_template = """
 你是{agent_name}，{agent_bio}，{agent_instructions}
@@ -163,14 +161,14 @@ def make_task_conclusion_prompt(agent_profile, goal, memory, max_tokens_num, tok
     return prompt
 
 
-def make_no_task_conclusion_prompt(query, conversation_history=""):
-    prompt = ""
+def make_no_task_conclusion_prompt(query, memory, conversation_history=""):
+    prompt = memory
     if conversation_history:
         for tmp in conversation_history[-3:]:
             prompt += f"User: {tmp['query']}\nAssistant:{tmp['answer']}\n"
         prompt += f"User: {query}\nAssistant:"
     else:
-        prompt = query
+        prompt += f"User: {query}\nAssistant:"
     return prompt
 
 
@@ -179,23 +177,25 @@ def prompt_truncate(tokenizer, prompt, memory, input_max_length):
     prompt_tokens = tokenizer.encode(prompt, **kwargs)
     if len(prompt_tokens) > input_max_length:
         if memory is None or memory not in prompt:
-            prompt_tokens = prompt_tokens[:input_max_length//2] + prompt_tokens[-input_max_length//2:]
+            prompt_tokens = prompt_tokens[:input_max_length // 2] + prompt_tokens[-input_max_length // 2:]
         else:
             memory_prompt_tokens = tokenizer.encode(memory, add_special_tokens=False)
             sublst_len = len(memory_prompt_tokens)
             start_index = None
             for i in range(len(prompt_tokens) - sublst_len + 1):
-                if prompt_tokens[i:i+sublst_len] == memory_prompt_tokens:
+                if prompt_tokens[i:i + sublst_len] == memory_prompt_tokens:
                     start_index = i
                     break
-            
+
             if start_index is None:
-                prompt_tokens = prompt_tokens[:input_max_length//2] + prompt_tokens[-input_max_length//2:]
+                prompt_tokens = prompt_tokens[:input_max_length // 2] + prompt_tokens[-input_max_length // 2:]
             else:
-                other_len = len(prompt_tokens) -  sublst_len
+                other_len = len(prompt_tokens) - sublst_len
                 if input_max_length > other_len:
                     max_memory_len = input_max_length - other_len
-                    memory_prompt_tokens = memory_prompt_tokens[:max_memory_len//2] + memory_prompt_tokens[-max_memory_len//2:]
-                    prompt_tokens = prompt_tokens[:start_index] + memory_prompt_tokens + prompt_tokens[start_index + sublst_len:]
+                    memory_prompt_tokens = memory_prompt_tokens[:max_memory_len // 2] + memory_prompt_tokens[
+                                                                                        -max_memory_len // 2:]
+                    prompt_tokens = prompt_tokens[:start_index] + memory_prompt_tokens + prompt_tokens[
+                                                                                         start_index + sublst_len:]
     prompt = tokenizer.decode(prompt_tokens, skip_special_tokens=True)
     return prompt

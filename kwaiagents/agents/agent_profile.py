@@ -28,6 +28,7 @@ class AgentProfile(object):
             self.tools = json.loads(tool_names)
         else:
             self.tools = tool_names
+        self.knowledge_dir = input_dict.get("knowledge_dir", "knowledge")
 
     def to_json_file(self, fname):
         with open(fname, "w") as f:

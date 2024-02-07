@@ -136,7 +136,7 @@ class PostgresCollection(CollectionMemory):
             where_document=None,
             include=["metadatas", "documents"],
     ):
-        # TODO: Mirrors Chroma API, but could be optimized a lot
+
         category = self.category
         table_name = self.client._table_name(category)
         self._validate_metadata(parse_metadata(where))

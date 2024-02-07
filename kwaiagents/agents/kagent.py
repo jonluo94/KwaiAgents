@@ -11,13 +11,15 @@ from datetime import datetime
 from lunar_python import Lunar, Solar
 from transformers import AutoTokenizer
 
+from kwaiagents.memorys import search_memory
+from kwaiagents.memorys.persistence import initialize_knowledge_txt_to_memory
 from kwaiagents.tools import ALL_NO_TOOLS, ALL_TOOLS, FinishTool, NoTool
 from kwaiagents.llms import create_chat_completion
 from kwaiagents.agents.prompts import make_planning_prompt
 from kwaiagents.agents.prompts import make_no_task_conclusion_prompt, make_task_conclusion_prompt
 from kwaiagents.utils.chain_logger import *
+from kwaiagents.utils.file_utils import traverse_files_in_directory, calculate_file_name_md5
 from kwaiagents.utils.json_fix_general import find_json_dict, correct_json
-from kwaiagents.utils.date_utils import get_current_time_and_date
 
 
 class SingleTaskListStorage:
@@ -71,7 +73,11 @@ class KAgentSysLite(object):
         self.cfg.set_chain_logger(self.chain_logger)
 
     def initialize_memory(self):
-        pass
+        print(f'\n============ KNOWLEDGE ============')
+        for knowledge_file in traverse_files_in_directory(self.agent_profile.knowledge_dir):
+            category = calculate_file_name_md5(knowledge_file)
+            print(f"category {category} : knowledge_file {knowledge_file}")
+            initialize_knowledge_txt_to_memory(knowledge_file, category)
 
     def initialize_tokenizer(self, llm_name):
         if "baichuan" in llm_name:
@@ -106,12 +112,29 @@ class KAgentSysLite(object):
         self.tools = used_tools
         self.name2tools = {t.name: t for t in self.tools}
 
+    def _memory_knowledge_retrival(self, goal: str):
+        print(f'\n**************  KNOWLEDGE RETRIVAL ************** ')
+        knowledges = []
+        for knowledge_file in traverse_files_in_directory(self.agent_profile.knowledge_dir):
+            category = calculate_file_name_md5(knowledge_file)
+            memories = search_memory(category, goal, n_results=1)
+            knowledges.extend(memories)
+
+        knowledge = "* Relevant Knowledge:\n"
+        for i, kl in enumerate(knowledges, start=1):
+            print(f"[{i}]: {kl['document']} {kl['distance']}\n")
+            knowledge_text = f"[{i}]: {kl['document']}\n"
+            knowledge += knowledge_text
+
+        return knowledge
+
     def memory_retrival(self,
                         goal: str,
                         conversation_history: List[List],
                         complete_task_list: List[Dict]):
 
-        memory = ""
+        memory = self._memory_knowledge_retrival(goal)
+
         if conversation_history:
             memory += f"* Conversation History:\n"
             for tmp in conversation_history[-3:]:
@@ -125,8 +148,8 @@ class KAgentSysLite(object):
     def task_plan(self, goal, memory):
         prompt = make_planning_prompt(self.agent_profile, goal, self.tools, memory, self.cfg.max_tokens_num,
                                       self.tokenizer, lang=self.lang)
-        # print(f'\n************** TASK PLAN AGENT PROMPT *************')
-        # print(prompt)
+        print(f'\n************** TASK PLAN AGENT PROMPT *************')
+        print(prompt)
         try:
             response, _ = create_chat_completion(
                 query=prompt,
@@ -191,12 +214,12 @@ class KAgentSysLite(object):
                    ):
 
         if no_task_planned:
-            prompt = make_no_task_conclusion_prompt(goal, conversation_history)
+            prompt = make_no_task_conclusion_prompt(goal, memory, conversation_history)
         else:
             prompt = make_task_conclusion_prompt(self.agent_profile, goal, memory, self.cfg.max_tokens_num,
                                                  self.tokenizer, lang=self.lang)
-        # print(f'\n************** CONCLUSION AGENT PROMPT *************')
-        # print(prompt)
+        print(f'\n************** CONCLUSION AGENT PROMPT *************')
+        print(prompt)
 
         response, _ = create_chat_completion(
             query=prompt,

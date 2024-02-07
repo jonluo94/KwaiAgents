@@ -3,11 +3,14 @@ from . import (
     create_memory,
     get_memories,
     wipe_all_memories,
+    search_memory,
+    wipe_category,
 )
 from .base import get_client
+from ..utils.file_utils import calculate_file_hash
 
 
-def export_memory_to_json(include_embeddings=True):
+def export_memory_to_json(include_embeddings=False):
     """
     Export all memories to a dictionary, optionally including embeddings.
 
@@ -40,7 +43,7 @@ def export_memory_to_json(include_embeddings=True):
     return collections_dict
 
 
-def export_memory_to_file(path="./memory.json", include_embeddings=True):
+def export_memory_to_file(path="./memory.json", include_embeddings=False):
     """
     Export all memories to a JSON file, optionally including embeddings.
 
@@ -61,7 +64,7 @@ def export_memory_to_file(path="./memory.json", include_embeddings=True):
 
     # Write the dictionary to a JSON file
     with open(path, "w") as outfile:
-        json.dump(collections_dict, outfile)
+        json.dump(collections_dict, outfile, ensure_ascii=False)
 
 
 def import_json_to_memory(data, replace=True):
@@ -114,3 +117,21 @@ def import_file_to_memory(path="./memory.json", replace=True):
 
     # Import the data into the database
     import_json_to_memory(data, replace)
+
+
+def initialize_knowledge_txt_to_memory(path="knowledge.txt", category: str = "knowledge"):
+    # 计算文件哈系
+    knowledge_file_hash = calculate_file_hash(path)
+    # 判断是文件是否改变
+    memories = search_memory(category, max_distance=0, search_text=knowledge_file_hash, n_results=1)
+    if len(memories) == 1 and memories[0]["distance"] == 0:
+        return
+
+    # 不存在或发生改变则 重建知识库memory
+    wipe_category(category)
+
+    with open(path, 'r') as file:
+        lines = file.readlines()
+    lines = [knowledge_file_hash] + lines
+    for line in lines:
+        create_memory(category, line.replace("\n", ""))

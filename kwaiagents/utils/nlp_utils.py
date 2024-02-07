@@ -97,7 +97,6 @@ def summarize_text(
                 create_message(chunk, question)
                 for chunk in batch_chunk
             ]
-            #todo: bug?
             batch_summaries, _ = create_chat_completion(
                 query=batch,
                 llm_model_name=cfg.fast_llm_model,
