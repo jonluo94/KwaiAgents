@@ -5,6 +5,7 @@ from .memory import (
     create_unique_memory,
     get_memories,
     search_memory,
+    search_similar_memory,
     get_memory,
     update_memory,
     delete_memory,

@@ -7,6 +7,7 @@ from . import (
     wipe_category,
 )
 from .base import get_client
+from .memory import search_similar_memory
 from ..utils.file_utils import calculate_file_hash
 
 
@@ -123,10 +124,10 @@ def initialize_knowledge_txt_to_memory(path="knowledge.txt", category: str = "kn
     # 计算文件哈系
     knowledge_file_hash = calculate_file_hash(path)
     # 判断是文件是否改变
-    memories = search_memory(category, max_distance=0, search_text=knowledge_file_hash, n_results=1)
+    memories = search_similar_memory(category, knowledge_file_hash, 1, 1)
     if len(memories) == 1 and memories[0]["distance"] == 0:
         return
-
+    print(f"initialize knowledge {path} to memory: {knowledge_file_hash}")
     # 不存在或发生改变则 重建知识库memory
     wipe_category(category)
 

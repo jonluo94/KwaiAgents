@@ -90,6 +90,63 @@ def create_unique_memory(category, content, metadata={}, similarity=0.95):
     return
 
 
+def search_similar_memory(
+        category,
+        search_text,
+        n_results=5,
+        similarity_threshold=0.95
+):
+    """
+    Cearch a collection with given query texts.
+
+    Arguments:
+    category (str): Category of the collection.
+    search_text (str): Text to be searched.
+    n_results (int): Number of results to be returned.
+    similarity_threshold (float, optional): The threshold for determining similarity. Defaults to DEFAULT_SIMILARY_THRESHOLD.
+
+    Returns:
+    list: List of search results.
+    """
+
+    # get or create the collection
+    memories = get_client().get_or_create_collection(category)
+
+    if (memories.count()) == 0:
+        return []
+
+    # min n_results to prevent searching for more elements than are available
+    n_results = min(n_results, memories.count())
+
+    # get the types to include
+    include_types = get_include_types(True, True)
+
+    # perform the query and get the response
+    query = memories.query(
+        query_texts=[search_text],
+        n_results=n_results,
+        include=include_types,
+    )
+
+    # if isinstance(query, list):
+    query = flatten_arrays(query)
+
+    # convert the query response to list and return
+    result_list = chroma_collection_to_list(query)
+
+    # find similar memories
+    if len(result_list) == 0:
+        return []
+    similar_memories = []
+    for memory in result_list:
+        goal_similarity = 1.0 - memory["distance"]
+        if goal_similarity >= similarity_threshold:
+            memory["similarity"] = goal_similarity
+            similar_memories.append(memory)
+
+    return similar_memories
+
+
 def search_memory(
         category,
         search_text,

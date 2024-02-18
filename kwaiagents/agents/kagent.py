@@ -11,8 +11,8 @@ from datetime import datetime
 from lunar_python import Lunar, Solar
 from transformers import AutoTokenizer
 
-from kwaiagents.memorys import search_memory
-from kwaiagents.memorys.persistence import initialize_knowledge_txt_to_memory
+from kwaiagents.memories import search_memory, search_similar_memory
+from kwaiagents.memories.persistence import initialize_knowledge_txt_to_memory
 from kwaiagents.tools import ALL_NO_TOOLS, ALL_TOOLS, FinishTool, NoTool
 from kwaiagents.llms import create_chat_completion
 from kwaiagents.agents.prompts import make_planning_prompt
@@ -117,12 +117,12 @@ class KAgentSysLite(object):
         knowledges = []
         for knowledge_file in traverse_files_in_directory(self.agent_profile.knowledge_dir):
             category = calculate_file_name_md5(knowledge_file)
-            memories = search_memory(category, goal, n_results=1)
+            memories = search_similar_memory(category, goal, similarity_threshold=self.cfg.knowledge_similarity_threshold)
             knowledges.extend(memories)
 
         knowledge = "* Relevant Knowledge:\n"
         for i, kl in enumerate(knowledges, start=1):
-            print(f"[{i}]: {kl['document']} {kl['distance']}\n")
+            print(f"[{i}]: {kl['document']} {kl['similarity']}\n")
             knowledge_text = f"[{i}]: {kl['document']}\n"
             knowledge += knowledge_text
 

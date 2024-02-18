@@ -17,6 +17,7 @@ class Config(object):
         self.llm_max_retries = 5
         self.temperature = 1.0
         self.max_tokens_num = 4096
+        self.knowledge_similarity_threshold = 0.6
         self.chain_logger = ChainMessageLogger()
 
     def __str__(self):
