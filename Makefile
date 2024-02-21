@@ -7,7 +7,7 @@ pip-install:
 start-fschat-kagentlms_qwen_7b_mat:
 	pip install vllm
 	pip install "fschat[model_worker,webui]"
-	nohup python -m fastchat.serve.controller &
+	nohup python -m fastchat.serve.controller  --host 0.0.0.0 &
 	nohup python -m fastchat.serve.vllm_worker --model-path /home/jonluo/huggingface2/kagentlms_qwen_7b_mat --trust-remote-code --dtype half --max-model-len=4096 &
 	nohup python -m fastchat.serve.openai_api_server --host localhost --port 8888 &
 

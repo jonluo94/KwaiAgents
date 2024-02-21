@@ -23,7 +23,7 @@ class MemoryEmbeddingFunction(EmbeddingFunction[Documents]):
                 raise ValueError(
                     "The sentence_transformers python package is not installed. Please install it with `pip install sentence_transformers`"
                 )
-            self.models[model_name] = SentenceTransformer(model_name, device=device)
+            self.models[model_name] = SentenceTransformer(model_name, device="cpu")
         self._model = self.models[model_name]
         self._normalize_embeddings = normalize_embeddings
 

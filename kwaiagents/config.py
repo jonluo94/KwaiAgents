@@ -14,11 +14,11 @@ class Config(object):
         self.browse_chunk_max_length = 4096
         self.browse_summary_max_token = 300
         self.selenium_web_browser = "chrome"
-        self.llm_max_retries = 5
+        self.llm_max_retries = 3
         self.temperature = 1.0
         self.max_tokens_num = 4096
-        self.knowledge_similarity_threshold = 0.6
-        self.knowledge_split_maximum_length = 30
+        self.knowledge_similarity_threshold = 0.5
+        self.knowledge_split_maximum_length = 20
         self.chain_logger = ChainMessageLogger()
 
     def __str__(self):

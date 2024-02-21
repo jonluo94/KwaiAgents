@@ -332,7 +332,6 @@ class KAgentSysLite(object):
 
     def check_task_complete(self, task, iter_id):
         print("check_task_complete:", task)
-        command_name = task["command"]["name"]
         if (
                 not task
                 or ("task_name" not in task)
@@ -342,12 +341,12 @@ class KAgentSysLite(object):
         ):
             self.chain_logger.put("finish", str(task.get("task_name", "")))
             return True
-        elif command_name == FinishTool.name:
+        elif task["command"]["name"] == FinishTool.name:
             self.chain_logger.put(
                 "finish", str(task["command"]["args"].get("reason", ""))
             )
             return True
-        elif command_name == NoTool.name:
+        elif task["command"]["name"] == NoTool.name:
             if iter_id == 1:
                 self.chain_logger.put(
                     "finish", logging_do_not_need_use_tool_msg(self.lang)
@@ -357,7 +356,7 @@ class KAgentSysLite(object):
                     "finish", logging_do_not_need_use_tool_anymore_msg(self.lang)
                 )
             return True
-        elif command_name not in self.name2tools:
+        elif task["command"]["name"] not in self.name2tools:
             self.chain_logger.put("finish", logging_do_not_need_use_tool_msg(self.lang))
             return True
         else:
