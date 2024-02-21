@@ -27,10 +27,10 @@ class SearchResult(BaseResult):
         if not self.json_data:
             return ""
         else:
-            return "\n" + "\n".join([
-                                        f'{idx + 1}. <a href="{item["href"]}" target="_blank"><b>{item["title"]}</b></a>' + " | " +
-                                        item["body"]
-                                        for idx, item in enumerate(self.json_data)])
+            md = "\n| Index | Title | Body |\n| --- | --- | --- |\n" + "\n".join([
+                f'| {idx + 1} | <a href="{item["href"]}" target="_blank"><b>{item["title"]}</b></a> | {item["body"]} |'
+                for idx, item in enumerate(self.json_data)])
+            return md + "\n"
 
     @property
     def answer_full(self):
