@@ -26,6 +26,10 @@ def calculate_file_hash(filename, algorithm='sha256'):
     return hash_algorithm.hexdigest()
 
 
+def calculate_string_hash(input_string):
+    return hashlib.sha256(input_string.encode()).hexdigest()
+
+
 #遍历文件夹的所有文件
 def traverse_files_in_directory(directory):
     """

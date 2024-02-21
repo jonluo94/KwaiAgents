@@ -287,7 +287,7 @@ def get_memories(
         category (str): The category of the memories.
         sort_order (str, optional): The sorting order of the memories. Can be 'asc' or 'desc'. Defaults to 'desc'.
         filter_metadata (dict, optional): Filter to apply on metadata. Defaults to None.
-        n_results (int, optional): The number of results to return. Defaults to 20.
+        n_results (int, optional): The number of results to return. Defaults to 20. When number is -1 return all
         include_embeddings (bool, optional): Whether to include the embeddings. Defaults to True.
         novel (bool, optional): Whether to only include memories that are marked as novel. Defaults to False.
 
@@ -338,8 +338,9 @@ def get_memories(
     # Sort memories by ID. If sort_order is 'desc', then the reverse parameter will be True, and memories will be sorted in descending order.
     memories.sort(key=lambda x: x["id"], reverse=sort_order == "desc")
 
-    # Only keep the top n_results memories
-    memories = memories[:n_results]
+    # Only keep the top n_results memories , when n_results = -1 return all memories
+    if n_results != -1:
+        memories = memories[:n_results]
 
     return memories
 

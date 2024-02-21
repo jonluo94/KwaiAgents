@@ -11,14 +11,26 @@ from datetime import datetime
 from lunar_python import Lunar, Solar
 from transformers import AutoTokenizer
 
-from kwaiagents.memories import search_memory, search_similar_memory
-from kwaiagents.memories.persistence import initialize_knowledge_txt_to_memory
+from kwaiagents.memories import (
+    search_memory,
+    search_similar_memory,
+    wipe_category,
+    create_memory, get_memories,
+)
 from kwaiagents.tools import ALL_NO_TOOLS, ALL_TOOLS, FinishTool, NoTool
 from kwaiagents.llms import create_chat_completion
 from kwaiagents.agents.prompts import make_planning_prompt
-from kwaiagents.agents.prompts import make_no_task_conclusion_prompt, make_task_conclusion_prompt
+from kwaiagents.agents.prompts import (
+    make_no_task_conclusion_prompt,
+    make_task_conclusion_prompt,
+)
 from kwaiagents.utils.chain_logger import *
-from kwaiagents.utils.file_utils import traverse_files_in_directory, calculate_file_name_md5
+from kwaiagents.utils.file_utils import (
+    traverse_files_in_directory,
+    calculate_file_name_md5,
+    calculate_file_hash,
+    calculate_string_hash,
+)
 from kwaiagents.utils.json_fix_general import find_json_dict, correct_json
 
 
@@ -69,15 +81,19 @@ class KAgentSysLite(object):
         self.tool_retrival()
 
     def initialize_logger(self):
-        self.chain_logger = ChainMessageLogger(output_streams=[sys.stdout], lang=self.lang)
+        self.chain_logger = ChainMessageLogger(
+            output_streams=[sys.stdout], lang=self.lang
+        )
         self.cfg.set_chain_logger(self.chain_logger)
 
     def initialize_memory(self):
-        print(f'\n============ KNOWLEDGE ============')
-        for knowledge_file in traverse_files_in_directory(self.agent_profile.knowledge_dir):
+        print(f"\n============ KNOWLEDGE ============")
+        for knowledge_file in traverse_files_in_directory(
+                self.agent_profile.knowledge_dir
+        ):
             category = calculate_file_name_md5(knowledge_file)
             print(f"category {category} : knowledge_file {knowledge_file}")
-            initialize_knowledge_txt_to_memory(knowledge_file, category)
+            self.initialize_knowledge_txt_to_memory(knowledge_file, category)
 
     def initialize_tokenizer(self, llm_name):
         if "baichuan" in llm_name:
@@ -87,12 +103,45 @@ class KAgentSysLite(object):
         else:
             model_name = "gpt2"
         tokenizer = AutoTokenizer.from_pretrained(
-            model_name,
-            use_fast=False,
-            padding_side='left',
-            trust_remote_code=True
+            model_name, use_fast=False, padding_side="left", trust_remote_code=True
         )
         return tokenizer
+
+    def initialize_knowledge_txt_to_memory(
+            self, path="knowledge.txt", category="knowledge"
+    ):
+        # 计算文件哈系
+        knowledge_file_hash = calculate_file_hash(path)
+        # 判断是文件是否改变
+        memories = search_similar_memory(category, knowledge_file_hash, 1, 1)
+        if len(memories) == 1 and memories[0]["distance"] == 0:
+            return
+        print(f"initialize knowledge {path} to memory: {knowledge_file_hash}")
+        # 不存在或发生改变则 重建知识库memory
+        wipe_category(category)
+        # 添加knowledge_file_hash
+        create_memory(category, knowledge_file_hash)
+
+        with open(path, "r") as file:
+            lines = file.readlines()
+
+        for line in lines:
+            # 计算每行知识hash
+            knowledge_hash = calculate_string_hash(line)
+            # 按长度分割每行知识
+            max_line_len = self.cfg.knowledge_split_maximum_length
+            cut_lines = [
+                line[i: i + max_line_len] for i in range(0, len(line), max_line_len)
+            ]
+            for index, cline in enumerate(cut_lines):
+                # 初始化知识库
+                create_memory(
+                    category=category,
+                    text=cline,
+                    metadata={
+                        "knowledge_index": index,
+                        "knowledge_hash": knowledge_hash,
+                    })
 
     def tool_retrival(self):
         if "notool" in self.agent_profile.tools:
@@ -105,7 +154,10 @@ class KAgentSysLite(object):
             else:
                 used_tools = list()
                 for tool in all_tools:
-                    if tool.zh_name in self.agent_profile.tools or tool.name in self.agent_profile.tools:
+                    if (
+                            tool.zh_name in self.agent_profile.tools
+                            or tool.name in self.agent_profile.tools
+                    ):
                         used_tools.append(tool)
             used_tools += [tool_cls(cfg=self.cfg) for tool_cls in ALL_NO_TOOLS]
 
@@ -113,25 +165,45 @@ class KAgentSysLite(object):
         self.name2tools = {t.name: t for t in self.tools}
 
     def _memory_knowledge_retrival(self, goal: str):
-        print(f'\n**************  KNOWLEDGE RETRIVAL ************** ')
+        print(f"\n**************  KNOWLEDGE RETRIVAL ************** ")
         knowledges = []
-        for knowledge_file in traverse_files_in_directory(self.agent_profile.knowledge_dir):
+        for knowledge_file in traverse_files_in_directory(
+                self.agent_profile.knowledge_dir
+        ):
             category = calculate_file_name_md5(knowledge_file)
-            memories = search_similar_memory(category, goal, similarity_threshold=self.cfg.knowledge_similarity_threshold)
-            knowledges.extend(memories)
+            memories = search_similar_memory(
+                category,
+                goal,
+                similarity_threshold=self.cfg.knowledge_similarity_threshold,
+            )
+            # 通过metadata补全完整的知识
+            for memo in memories:
+                knowledge_hash = memo.get("metadata")["knowledge_hash"]
+                tmp_knowledge = "".join([
+                    kl.get("document") for kl in get_memories(
+                        category=category,
+                        filter_metadata={"knowledge_hash": knowledge_hash},
+                        n_results=-1,
+                        sort_order="asc"
+                    )
+                ])
+                memo["full_document"] = tmp_knowledge.replace("\n", "")
+                knowledges.append(memo)
 
         knowledge = "* Relevant Knowledge:\n"
         for i, kl in enumerate(knowledges, start=1):
-            print(f"[{i}]: {kl['document']} {kl['similarity']}\n")
-            knowledge_text = f"[{i}]: {kl['document']}\n"
+            print(f"[{i}]: {kl['full_document']} {kl['similarity']}\n")
+            knowledge_text = f"[{i}]: {kl['full_document']}\n"
             knowledge += knowledge_text
 
         return knowledge
 
-    def memory_retrival(self,
-                        goal: str,
-                        conversation_history: List[List],
-                        complete_task_list: List[Dict]):
+    def memory_retrival(
+            self,
+            goal: str,
+            conversation_history: List[List],
+            complete_task_list: List[Dict],
+    ):
 
         memory = self._memory_knowledge_retrival(goal)
 
@@ -141,27 +213,35 @@ class KAgentSysLite(object):
                 memory += f"User: {tmp['query']}\nAssistant:{tmp['answer']}\n"
 
         if complete_task_list:
-            complete_task_str = json.dumps(complete_task_list, ensure_ascii=False, indent=4)
+            complete_task_str = json.dumps(
+                complete_task_list, ensure_ascii=False, indent=4
+            )
             memory += f"* Complete tasks: {complete_task_str}\n"
         return memory
 
     def task_plan(self, goal, memory):
-        prompt = make_planning_prompt(self.agent_profile, goal, self.tools, memory, self.cfg.max_tokens_num,
-                                      self.tokenizer, lang=self.lang)
-        print(f'\n************** TASK PLAN AGENT PROMPT *************')
+        prompt = make_planning_prompt(
+            self.agent_profile,
+            goal,
+            self.tools,
+            memory,
+            self.cfg.max_tokens_num,
+            self.tokenizer,
+            lang=self.lang,
+        )
+        print(f"\n************** TASK PLAN AGENT PROMPT *************")
         print(prompt)
         try:
             response, _ = create_chat_completion(
-                query=prompt,
-                llm_model_name=self.cfg.smart_llm_model,
-                config=self.cfg
+                query=prompt, llm_model_name=self.cfg.smart_llm_model, config=self.cfg
             )
             self.chain_logger.put_prompt_response(
                 prompt=prompt,
                 response=response,
                 session_id=self.session_id,
                 mtype="auto_task_create",
-                llm_name=self.cfg.smart_llm_model)
+                llm_name=self.cfg.smart_llm_model,
+            )
             response = correct_json(find_json_dict(response))
             task = json.loads(response)
             new_tasks = [task]
@@ -178,8 +258,12 @@ class KAgentSysLite(object):
             command_name = command.get("name", "")
             if command_name == "search":
                 command_name = "web_search"
-            args_text = ",".join([f'{key}={val}' for key, val in command["args"].items()])
-            execute_str = f'{command_name}({args_text})'.replace("wikipedia(", "kuaipedia(")
+            args_text = ",".join(
+                [f"{key}={val}" for key, val in command["args"].items()]
+            )
+            execute_str = f"{command_name}({args_text})".replace(
+                "wikipedia(", "kuaipedia("
+            )
             self.chain_logger.put("execute", execute_str)
             if not command_name:
                 raise RuntimeError("{} has no tool name".format(command))
@@ -196,7 +280,7 @@ class KAgentSysLite(object):
                     response=response,
                     session_id=self.session_id,
                     mtype=f"auto_command_{command_name}",
-                    llm_name=self.cfg.fast_llm_model
+                    llm_name=self.cfg.fast_llm_model,
                 )
             return tool_output.answer
         except KeyboardInterrupt:
@@ -206,26 +290,34 @@ class KAgentSysLite(object):
             self.chain_logger.put("observation", logging_execute_fail_msg(self.lang))
             return ""
 
-    def conclusion(self,
-                   goal: str,
-                   memory,
-                   conversation_history: List[List],
-                   no_task_planned: bool = False
-                   ):
+    def conclusion(
+            self,
+            goal: str,
+            memory,
+            conversation_history: List[List],
+            no_task_planned: bool = False,
+    ):
 
         if no_task_planned:
             prompt = make_no_task_conclusion_prompt(goal, memory, conversation_history)
         else:
-            prompt = make_task_conclusion_prompt(self.agent_profile, goal, memory, self.cfg.max_tokens_num,
-                                                 self.tokenizer, lang=self.lang)
-        print(f'\n************** CONCLUSION AGENT PROMPT *************')
+            prompt = make_task_conclusion_prompt(
+                self.agent_profile,
+                goal,
+                memory,
+                self.cfg.max_tokens_num,
+                self.tokenizer,
+                lang=self.lang,
+            )
+        print(f"\n************** CONCLUSION AGENT PROMPT *************")
         print(prompt)
 
         response, _ = create_chat_completion(
             query=prompt,
             chat_id="kwaiagents_answer_" + self.session_id,
             llm_model_name=self.cfg.smart_llm_model,
-            config=self.cfg)
+            config=self.cfg,
+        )
 
         # print(response)
 
@@ -234,24 +326,36 @@ class KAgentSysLite(object):
             response=response,
             session_id=self.session_id,
             mtype="auto_conclusion",
-            llm_name=self.cfg.smart_llm_model)
+            llm_name=self.cfg.smart_llm_model,
+        )
         return response
 
     def check_task_complete(self, task, iter_id):
         print("check_task_complete:", task)
         command_name = task["command"]["name"]
-        if not task or ("task_name" not in task) or ("command" not in task) \
-                or ("args" not in task["command"]) or ("name" not in task["command"]):
+        if (
+                not task
+                or ("task_name" not in task)
+                or ("command" not in task)
+                or ("args" not in task["command"])
+                or ("name" not in task["command"])
+        ):
             self.chain_logger.put("finish", str(task.get("task_name", "")))
             return True
         elif command_name == FinishTool.name:
-            self.chain_logger.put("finish", str(task["command"]["args"].get("reason", "")))
+            self.chain_logger.put(
+                "finish", str(task["command"]["args"].get("reason", ""))
+            )
             return True
         elif command_name == NoTool.name:
             if iter_id == 1:
-                self.chain_logger.put("finish", logging_do_not_need_use_tool_msg(self.lang))
+                self.chain_logger.put(
+                    "finish", logging_do_not_need_use_tool_msg(self.lang)
+                )
             else:
-                self.chain_logger.put("finish", logging_do_not_need_use_tool_anymore_msg(self.lang))
+                self.chain_logger.put(
+                    "finish", logging_do_not_need_use_tool_anymore_msg(self.lang)
+                )
             return True
         elif command_name not in self.name2tools:
             self.chain_logger.put("finish", logging_do_not_need_use_tool_msg(self.lang))
@@ -280,7 +384,10 @@ class KAgentSysLite(object):
                     if not tasks_storage.is_empty():
                         task = tasks_storage.popleft()
 
-                        if (self.check_task_complete(task, iter_id, )):
+                        if self.check_task_complete(
+                                task,
+                                iter_id,
+                        ):
                             if iter_id <= 2:
                                 no_task_planned = True
                             break
@@ -293,7 +400,9 @@ class KAgentSysLite(object):
                         complete_task_list.append(task)
 
                     if iter_id > self.agent_profile.max_iter_num:
-                        self.chain_logger.put("finish", logging_stop_thinking_msg(self.lang))
+                        self.chain_logger.put(
+                            "finish", logging_stop_thinking_msg(self.lang)
+                        )
                         break
                     self.chain_logger.put("thinking")
                     memory = self.memory_retrival(goal, history, complete_task_list)
@@ -313,7 +422,8 @@ class KAgentSysLite(object):
             goal,
             memory=memory,
             conversation_history=history,
-            no_task_planned=no_task_planned)
+            no_task_planned=no_task_planned,
+        )
         self.chain_logger.put("chain_end", "")
 
         new_history = history[:] + [{"query": query, "answer": conclusion}]

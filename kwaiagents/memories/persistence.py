@@ -3,12 +3,8 @@ from . import (
     create_memory,
     get_memories,
     wipe_all_memories,
-    search_memory,
-    wipe_category,
 )
 from .base import get_client
-from .memory import search_similar_memory
-from ..utils.file_utils import calculate_file_hash
 
 
 def export_memory_to_json(include_embeddings=False):
@@ -36,7 +32,7 @@ def export_memory_to_json(include_embeddings=False):
         collections_dict[collection_name] = []
 
         # Get all memories from the current collection
-        memories = get_memories(collection_name, include_embeddings=include_embeddings)
+        memories = get_memories(collection_name, n_results=-1, include_embeddings=include_embeddings)
         for memory in memories:
             # Append each memory to its corresponding collection list
             collections_dict[collection_name].append(memory)
@@ -118,21 +114,3 @@ def import_file_to_memory(path="./memory.json", replace=True):
 
     # Import the data into the database
     import_json_to_memory(data, replace)
-
-
-def initialize_knowledge_txt_to_memory(path="knowledge.txt", category: str = "knowledge"):
-    # 计算文件哈系
-    knowledge_file_hash = calculate_file_hash(path)
-    # 判断是文件是否改变
-    memories = search_similar_memory(category, knowledge_file_hash, 1, 1)
-    if len(memories) == 1 and memories[0]["distance"] == 0:
-        return
-    print(f"initialize knowledge {path} to memory: {knowledge_file_hash}")
-    # 不存在或发生改变则 重建知识库memory
-    wipe_category(category)
-
-    with open(path, 'r') as file:
-        lines = file.readlines()
-    lines = [knowledge_file_hash] + lines
-    for line in lines:
-        create_memory(category, line.replace("\n", ""))

@@ -18,6 +18,7 @@ class Config(object):
         self.temperature = 1.0
         self.max_tokens_num = 4096
         self.knowledge_similarity_threshold = 0.6
+        self.knowledge_split_maximum_length = 30
         self.chain_logger = ChainMessageLogger()
 
     def __str__(self):
