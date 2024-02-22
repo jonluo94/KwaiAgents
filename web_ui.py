@@ -260,7 +260,6 @@ def start_ui():
      .queue()
      .launch(server_name="0.0.0.0",
              server_port=7860,
-             show_api=False,
              share=False,
              inbrowser=False))
 
